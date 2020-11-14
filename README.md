@@ -1,0 +1,1 @@
+Just checking out how promises could be done.
