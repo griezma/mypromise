@@ -1,1 +1,1 @@
-Just checking out how promises could be done.
+Wondering how js promises could be done.
