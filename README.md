@@ -1,1 +1,3 @@
-Just checking out how promises could be done.
+# MyPromise
+
+Experimental implementation of a Promise class.
