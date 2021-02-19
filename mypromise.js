@@ -1,14 +1,8 @@
-class MyPromiseException extends Error {
-    constructor(err) {
-        super(err?.message);
-        super.name = "MyPromiseException";
-    }
-}
-
 export default class MyPromise {
     callbacks = [];
     catchFn;
     complete = false;
+    error = false;
     outcome;
 
     static resolve(val) {
@@ -16,32 +10,37 @@ export default class MyPromise {
     }
 
     constructor(execFn) {
-        console.log("constructor", execFn);
+        // console.log("MyPromise", execFn);
         try {
             execFn(this.resolve, this.reject);
         } catch (err) {
-            // console.log("error in execfn", { err });
             this.reject(err);
         }
     }
 
     then(thenFn) {
-        if (!thenFn) throw new Error("Must not be null");
+        if (!thenFn) throw new Error("thenFn must not be null");
         this.callbacks.push({thenFn});
-        if (this.outcome !== undefined) {
+        if (this.complete && !this.error) {
             this.resolve(this.outcome);
         }
         return this;
     }
 
     catch(catchFn) {
-        if (!catchFn) throw new Error("Must not be null");
+        if (!catchFn) throw new Error("catchFn must not be null");
         this.callbacks.push({catchFn});
+        if (this.complete && this.error) {
+            this.reject(this.outcome);
+        }
         return this;
     }
 
     resolve = val => {
         this.outcome = val;
+        this.complete = true;
+        this.error = false;
+
         let next;
         while (!!(next = this.callbacks.shift())) {
             const { thenFn, catchFn } = next;
@@ -49,38 +48,40 @@ export default class MyPromise {
             try {
                 this.outcome = thenFn(this.outcome);
             } catch (err) {
-                // console.log("error in resolve chain", { err });
                 this.reject(err);
             }
         }
     }
 
     nextCatchFn() {
-        const found = this.callbacks.findIndex(({ catchFn }) => !!catchFn);
-        if (found >= 0) {
-            const { catchFn } = this.callbacks[found];
-            this.callbacks = this.callbacks.slice(found + 1);
+        const catchIndex = this.callbacks.findIndex(({ catchFn }) => !!catchFn);
+
+        if (catchIndex >= 0) {
+            const { catchFn } = this.callbacks[catchIndex];
+            this.callbacks = this.callbacks.slice(catchIndex + 1);
             return catchFn;
         }
     }
 
     reject = err => {
+        this.complete = true;
+        this.error = true;
+        this.outcome = err;
+
         const catchFn = this.nextCatchFn();
-        console.log("reject", {catchFn});
 
         if (catchFn) {
             try {
-                catchFn(err);
-                return this.outcome;
-            } catch (catchFnErr) {
-                console.log("error in reject", { err });
-                err = catchFnErr;
+                this.resolve(catchFn(err));
+            } catch (err) {
+                this.reject(err);
             }
-        }
-        if (err instanceof Error) {
-            throw err;
         } else {
-            throw Error(err);
+            if (err instanceof Error) {
+                throw err;
+            } else {
+                throw Error(err);
+            }
         }
     }
 }
