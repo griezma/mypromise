@@ -8,12 +8,10 @@ export default class MyPromiseLite {
     outcome;
 
     constructor(execFn) {
-        execFn(this._resolve.bind(this));
-    }
-
-    _resolve(val) {
-        this.outcome = this.callbacks.reduce((acc, nextCb) => nextCb(acc), val);
-        this.complete = true;
+        execFn(val => {
+            this.outcome = this.callbacks.reduce((acc, nextCb) => nextCb(acc), val);
+            this.complete = true;
+        });
     }
 
     then(callback) {
