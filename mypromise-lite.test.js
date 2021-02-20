@@ -3,42 +3,41 @@ const { assert } = chai;
 
 import MyPromise from './mypromise-lite.js';
 
-async function timeout(ms) {
-    return new Promise(res => setTimeout(res, ms));
+const peek = (info = "peek") => val => { 
+    console.log(info, {val}); 
+    if (val instanceof Error) throw val;
+    return val;
 }
 
-describe("MyPromise", function () {
+describe("MyPromiseLite test", function() {
 
-    it("can resolve immediatly", function () {
+    it("can resolve immediately", function(done) {
         MyPromise.resolve("it works")
-            .then(v => assert.equal(v, "it works"));
+            .then(v => assert.equal(v, "it works"))
+            .then(() => done());
     });
 
-    it("can resolve deferred", async function () {
+    it("can resolve deferred", function(done) {
         new MyPromise(res => setTimeout(res, 10, "it worked"))
-            .then(val => assert.equal(val, "it worked"));
-        
-        await timeout(11);
+            .then(val => assert.equal(val, "it worked"))
+            .then(peek("finished"))
+            .then(done);
     });
 
     
-    it("can handle multiple then", async function (done) {
+    it("can handle multiple then", function(done) {
         function first(val) {
-            console.log("first", val);
             return val + 1;
         }
+
         function second(val) {
-            console.log("second", val);
-            return val + 1;
+            return val + 2;
         }
 
         new MyPromise(res => setTimeout(() => res(1), 10))
             .then(first)
             .then(second)
-            .then(val => assert.equal(val, 3))
-            .then(done());
-
-        await timeout(11);
-        assert.fail("should not reach");
+            .then(val => assert.equal(val, 4))
+            .then(done);
     });
 })

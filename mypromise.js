@@ -1,6 +1,5 @@
 export default class MyPromise {
     callbacks = [];
-    catchFn;
     complete = false;
     error = false;
     outcome;
@@ -37,8 +36,8 @@ export default class MyPromise {
     }
 
     resolve = val => {
-        this.outcome = val;
         this.complete = true;
+        this.outcome = val;
         this.error = false;
 
         let next;

@@ -4,14 +4,25 @@ export default class MyPromiseLite {
     }
 
     callbacks = [];
+    complete = false;
+    outcome;
 
-    constructor(executor) {
-        executor(val => this.callbacks.forEach(cb => val = cb(val)));
+    constructor(execFn) {
+        execFn(this._resolve.bind(this));
+    }
+
+    _resolve(val) {
+        this.outcome = this.callbacks.reduce((acc, nextCb) => nextCb(acc), val);
+        this.complete = true;
     }
 
     then(callback) {
-        return new MyPromiseLite(resolve => {
+        if (this.complete) {
+            callback(this.outcome);
+        } else {
             this.callbacks.push(callback);
-        });
+        }
+        return this;
     }
 }
+
